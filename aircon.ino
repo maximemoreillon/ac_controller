@@ -1,16 +1,3 @@
-/*
- * MQTT OTA AIRCON v8
- * Maxime MOREILLON
- * Changelog
- * v9
- * -Improved construction of the IR signal
- * v8
- * - Dynamic construction of the IR signal
- * v7
- * - Now using Async MQTT library
- */
-
-
 // Libraries
 #include <ESP8266WiFi.h> // Main ESP8266 library
 #include <ArduinoOTA.h> // OTA update library
