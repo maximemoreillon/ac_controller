@@ -28,7 +28,6 @@ Ticker MQTT_reconnect_timer;
 #define MQTT_HEATER_STATUS_TOPIC "heater/living/status"
 #define MQTT_MOTION_STATUS_TOPIC "motion/living/status"
 #define MQTT_DHT_STATUS_TOPIC "dht/living/status"
-#define MQTT_DEBUG_TOPIC "ac/living/debug"
 #define MQTT_QOS 1
 #define MQTT_RETAIN true
 
@@ -117,13 +116,4 @@ void loop() {
   ArduinoOTA.handle();
   read_PIR();
   read_DHT();
-
-  // Debugging
-  static boolean debugged;
-  if(millis() > 10000 && !debugged){
-    debugged = true;
-    Serial.println("debugging");
-    MQTT_client.publish(MQTT_DEBUG_TOPIC, MQTT_QOS, MQTT_RETAIN, "ON");
-    MQTT_client.publish(MQTT_DEBUG_TOPIC, MQTT_QOS, MQTT_RETAIN, "OFF");
-  }
 }
