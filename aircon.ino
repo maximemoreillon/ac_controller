@@ -1,3 +1,12 @@
+/*
+ * AIR CONDITIONER CONTROLLER
+ * Maxime MOREILLON
+ * 
+ * Board type: Wemos D1 Mini
+ * 
+ */
+
+
 // Libraries
 #include <ESP8266WiFi.h> // Main ESP8266 library
 #include <ArduinoOTA.h> // OTA update library
