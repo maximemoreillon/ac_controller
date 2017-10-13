@@ -31,12 +31,15 @@ AsyncMqttClient MQTT_client;
 Ticker MQTT_reconnect_timer;
 #define MQTT_BROKER_ADDRESS IPAddress(192, 168, 1, 2)
 #define MQTT_PORT 1883
+
 #define MQTT_AC_COMMAND_TOPIC "ac/living/command"
 #define MQTT_AC_STATUS_TOPIC "ac/living/status"
 #define MQTT_HEATER_COMMAND_TOPIC "heater/living/command"
 #define MQTT_HEATER_STATUS_TOPIC "heater/living/status"
+
 #define MQTT_MOTION_STATUS_TOPIC "motion/living/status"
 #define MQTT_DHT_STATUS_TOPIC "dht/living/status"
+
 #define MQTT_QOS 1
 #define MQTT_RETAIN true
 
@@ -95,6 +98,7 @@ DHT dht(DHT_PIN, DHT22);
 #define DHT_PUBLISH_PERIOD 300000 // [ms] = 5 minutes
 #define DHT_READ_PERIOD 10000 // [ms] = 10 seconds
 long last_DHT_publish_time, last_DHT_read_time;
+
 float DHT_temperature = 0;
 float DHT_humidity = 0;
 

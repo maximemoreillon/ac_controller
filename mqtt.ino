@@ -81,7 +81,7 @@ void MQTT_message_callback(char* topic, char* payload, AsyncMqttClientMessagePro
 
     IR_set_bits(POWER_BIT_INDEX, POWER_BIT_COUNT, POWER_ON);
 
-    if(strncmp(topic, MQTT_HEATER_COMMAND_TOPIC, len)==0){
+    if(strcmp(topic, MQTT_HEATER_COMMAND_TOPIC)==0){
       Serial.println("Turning HEATER ON and AC OFF");
       AC_status = "OFF";
       heater_status = "ON";
@@ -89,7 +89,7 @@ void MQTT_message_callback(char* topic, char* payload, AsyncMqttClientMessagePro
       IR_set_bits(MODE_BITS_INDEX, MODE_BIT_COUNT, MODE_HEATING);
       IR_set_bits(TEMPERATURE_BITS_INDEX, TEMPERATURE_BIT_COUNT, TEMPERATURE_HEATING);
     }
-    else if(strncmp(topic, MQTT_AC_COMMAND_TOPIC, len)==0){
+    else if(strcmp(topic, MQTT_AC_COMMAND_TOPIC)==0){
       Serial.println("Turning AC ON and HEATER OFF");
       AC_status = "ON";
       heater_status = "OFF";
@@ -100,7 +100,7 @@ void MQTT_message_callback(char* topic, char* payload, AsyncMqttClientMessagePro
   }
   else if(strncmp(payload, "TOGGLE", len)==0) {
 
-    if(strncmp(topic, MQTT_HEATER_COMMAND_TOPIC, len)==0){
+    if(strcmp(topic, MQTT_HEATER_COMMAND_TOPIC)==0){
 
       AC_status = "OFF";
       
@@ -121,7 +121,7 @@ void MQTT_message_callback(char* topic, char* payload, AsyncMqttClientMessagePro
         IR_set_bits(POWER_BIT_INDEX, POWER_BIT_COUNT, POWER_OFF);
       }
     }
-    else if(strncmp(topic, MQTT_AC_COMMAND_TOPIC, len)==0){
+    else if(strcmp(topic, MQTT_AC_COMMAND_TOPIC)==0){
 
       heater_status = "OFF";
       
