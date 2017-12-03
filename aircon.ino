@@ -74,7 +74,7 @@ byte IR_signal[] = {1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 #define MODE_COOLING 3
 #define MODE_HEATING 6
 
-#define TEMPERATURE_HEATING 20
+#define TEMPERATURE_HEATING 22
 #define TEMPERATURE_COOLING 27
 
 #define FAN_SILENT 1
