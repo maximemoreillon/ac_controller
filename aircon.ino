@@ -2,6 +2,9 @@
  * AIR CONDITIONER CONTROLLER
  * Maxime MOREILLON
  * 
+ * Air conditioner remote code decoding by Perhof:
+ * https://perhof.wordpress.com/2015/03/29/reverse-engineering-hitachi-air-conditioner-infrared-remote-commands/
+ * 
  * Board type: Wemos D1 Mini
  * 
  */
@@ -74,7 +77,7 @@ byte IR_signal[] = {1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 #define MODE_COOLING 3
 #define MODE_HEATING 6
 
-#define TEMPERATURE_HEATING 22
+#define TEMPERATURE_HEATING 23
 #define TEMPERATURE_COOLING 27
 
 #define FAN_SILENT 1
