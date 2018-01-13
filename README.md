@@ -19,3 +19,6 @@ Allows AC units to be controlled over Wi-Fi
 * Arduino IDE with [support for ESP8266](https://github.com/esp8266/Arduino)
 * [Async MQTT client](https://github.com/marvinroger/async-mqtt-client)
 * [ESPAsyncTCP](https://github.com/me-no-dev/ESPAsyncTCP)
+
+## References
+AC remote IR signals decoding by [Perhof](https://perhof.wordpress.com/2015/03/29/reverse-engineering-hitachi-air-conditioner-infrared-remote-commands/)
