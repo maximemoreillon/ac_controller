@@ -15,6 +15,8 @@ Allows AC units to be controlled over Wi-Fi
 ## Schematic
 ![GitHub Logo](https://moreillon.duckdns.org/projects/iot/images/ac_schematic.png)
 
+Note: R2 seems wrong. I'll look into it.
+
 ## Requirements
 * Arduino IDE with [support for ESP8266](https://github.com/esp8266/Arduino)
 * [Async MQTT client](https://github.com/marvinroger/async-mqtt-client)
