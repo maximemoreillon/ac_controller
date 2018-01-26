@@ -69,7 +69,7 @@ void MQTT_message_callback(char* topic, char* payload, AsyncMqttClientMessagePro
   Serial.print(total);
   Serial.println("");
 
-  IR_set_bits(FAN_BITS_INDEX, FAN_BIT_COUNT, FAN_SILENT);
+  IR_set_bits(FAN_BITS_INDEX, FAN_BIT_COUNT, FAN_MID);
   
   if(strncmp(payload, "OFF", len)==0) {
     Serial.println("Turning AC and HEATING OFF");
