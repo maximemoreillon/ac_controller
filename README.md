@@ -13,7 +13,7 @@ Allows AC units to be controlled over Wi-Fi
 * NPN transistor
 
 ## Schematic
-![GitHub Logo](https://moreillon.duckdns.org/projects/iot/images/ac_schematic.png)
+![AC controller schematic](http://maximemoreillon.com/images/projects/iot/ac/ac_schematic.png)
 
 Note: R2 seems wrong. I'll look into it.
 
