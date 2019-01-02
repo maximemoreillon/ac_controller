@@ -37,7 +37,11 @@ void IR_send_pulse(int pulse_length) {
       IR_on = 0;
     }
     digitalWrite(IR_LED_PIN, IR_on);
-    delayMicroseconds(26); // 1000000(us)/38000(hz) = 26(us)
+    
+    // IR LED frequency must be around 37-38kHz
+    // Approx pulse period = 26us
+    // A period consists of the LED being toggled twice => 13us between toggles
+    delayMicroseconds(13);
   }
   
   // turn off IR after pulse is complete
@@ -57,4 +61,3 @@ void IR_set_bits(int index, int bit_count, int value) {
     IR_signal[i+index+8] = !IR_signal[i+index]; // Parity
   }
 }
-
