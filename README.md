@@ -1,6 +1,6 @@
 # Wifi AC controller
 
-Allows AC units to be controlled over Wi-Fi
+Allows AC units to be controlled over Wi-Fi. 
 This code is deprecated, pleae check the following repository for the newest version:
 https://github.com/maximemoreillon/ac_controller_json
 
