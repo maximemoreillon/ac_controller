@@ -50,7 +50,7 @@ void read_DHT(){
   
       // Send the char array
       //Serial.println(F("[MQTT] publish of DHT measurement"));
-      MQTT_client.publish(MQTT_DHT_STATUS_TOPIC, JSONmessageBuffer, MQTT_RETAIN);
+      iot_kernel.mqtt.publish(MQTT_DHT_STATUS_TOPIC, JSONmessageBuffer, MQTT_RETAIN);
     }
   }
 }
@@ -79,7 +79,7 @@ void read_PIR(){
 
     // Send the char array
     //Serial.println(F("[MQTT] publish of motion detector state"));
-    MQTT_client.publish(MQTT_MOTION_STATUS_TOPIC, JSONmessageBuffer, MQTT_RETAIN);
+    iot_kernel.mqtt.publish(MQTT_MOTION_STATUS_TOPIC, JSONmessageBuffer, MQTT_RETAIN);
     
   }
 }
