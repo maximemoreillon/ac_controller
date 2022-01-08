@@ -1,5 +1,11 @@
 void read_DHT(){
 
+  static long last_DHT_publish_time;
+  static long last_DHT_read_time;
+
+  static float DHT_temperature = 0;
+  static float DHT_humidity = 0;
+
   long now = millis();
 
   // Reading sensor periodically
@@ -10,18 +16,20 @@ void read_DHT(){
     float t = dht.readTemperature();
 
     if (isnan(h) || isnan(t)) {
-      Serial.println("DHT reading error");
+      //Serial.println(F("[DHT] reading error"));
+      return;
     }
-    else {
-      Serial.print("DHT reading successful: ");
-      Serial.print(t);
-      Serial.print(" C, ");
-      Serial.print(h);
-      Serial.println(" %");
-      
-      DHT_temperature = t;
-      DHT_humidity = h;
-    }
+    
+    /*
+    Serial.print(F("[DHT] reading successsful: "));
+    Serial.print(t);
+    Serial.print(" C, ");
+    Serial.print(h);
+    Serial.println(" %");
+    */
+    
+    DHT_temperature = t;
+    DHT_humidity = h;
   }
 
   // Send MQTT value periodically
@@ -29,27 +37,49 @@ void read_DHT(){
     last_DHT_publish_time = now;
     // Only send valid temperature
     if(DHT_temperature != 0 && DHT_humidity != 0) {
-      Serial.println("MQTT publish of DHT data");
-      MQTT_publish_DHT(DHT_temperature, DHT_humidity);
+      // Prerpare a JSON message
+      StaticJsonDocument<200> outbound_JSON_message;
+  
+      // Add the DHT reading to the JSON message
+      outbound_JSON_message["temperature"] = (String)DHT_temperature;
+      outbound_JSON_message["humidity"] = (String)DHT_humidity;
+      
+      // Serialize JSON into a char array
+      char JSONmessageBuffer[100];
+      serializeJson(outbound_JSON_message, JSONmessageBuffer, sizeof(JSONmessageBuffer));
+  
+      // Send the char array
+      //Serial.println(F("[MQTT] publish of DHT measurement"));
+      MQTT_client.publish(MQTT_DHT_STATUS_TOPIC, JSONmessageBuffer, MQTT_RETAIN);
     }
   }
 }
 
 void read_PIR(){
+  static long last_PIR_reading;
   int PIR_reading = digitalRead(PIR_PIN);
-  if(PIR_reading != last_PIR_reading)
-  {
+  if(PIR_reading != last_PIR_reading) {
     // Motion sensor reading changed
     last_PIR_reading = PIR_reading;
+    
+    // Prerpare a JSON message
+    StaticJsonDocument<200> outbound_JSON_message;
+
+    // Add the motion detection state to the JSON message
     if(PIR_reading == HIGH){
-      Serial.println("Motion detected");
-      Serial.println("MQTT publish of motion sensor status");
-      MQTT_client.publish(MQTT_MOTION_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, "MOTION");
+      outbound_JSON_message["state"] = "motion";
     }
     else {
-      Serial.println("Motion stopped");
-      Serial.println("MQTT publish of motion sensor status");
-      MQTT_client.publish(MQTT_MOTION_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, "IDLE");
+      outbound_JSON_message["state"] = "idle";
     }
+
+    // Serialize JSON into a char array
+    char JSONmessageBuffer[100];
+    serializeJson(outbound_JSON_message, JSONmessageBuffer, sizeof(JSONmessageBuffer));
+
+    // Send the char array
+    //Serial.println(F("[MQTT] publish of motion detector state"));
+    MQTT_client.publish(MQTT_MOTION_STATUS_TOPIC, JSONmessageBuffer, MQTT_RETAIN);
+    
   }
 }

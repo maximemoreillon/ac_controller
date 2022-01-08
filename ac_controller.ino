@@ -2,9 +2,6 @@
  * AIR CONDITIONER CONTROLLER
  * Maxime MOREILLON
  * 
- * Air conditioner remote code decoding by Perhof:
- * https://perhof.wordpress.com/2015/03/29/reverse-engineering-hitachi-air-conditioner-infrared-remote-commands/
- * 
  * Board type: Wemos D1 Mini
  * 
  */
@@ -14,96 +11,45 @@
 #include <ESP8266WiFi.h> // Main ESP8266 library
 #include <ArduinoOTA.h> // OTA update library
 #include <WiFiUdp.h> // Required for OTA
-#include <AsyncMqttClient.h> // MQTT library
-#include <Ticker.h> // Used when reconecting MQTT upon wifi drop
+#include <PubSubClient.h>
 #include <DHT.h> // Temperature and humidity sensor
 #include <ArduinoJson.h>
+#include <ESP8266WebServer.h>
 
 #include "credentials.h"
 
-// Wifi
-Ticker wifi_reconnect_timer;
-WiFiEventHandler wifi_connect_handler;
-WiFiEventHandler wifi_disconnect_handler;
-
-// OTA
-#define HOSTNAME "aircon"
+//#include "aircon_kitchen_nagoya.h";
+#include "aircon_bedroom_nagoya.h";
 
 // MQTT
-AsyncMqttClient MQTT_client;
-Ticker MQTT_reconnect_timer;
 #define MQTT_BROKER_ADDRESS IPAddress(192, 168, 1, 2)
 #define MQTT_PORT 1883
-
-#define MQTT_AC_COMMAND_TOPIC "ac/living/command"
-#define MQTT_AC_STATUS_TOPIC "ac/living/status"
-#define MQTT_HEATER_COMMAND_TOPIC "heater/living/command"
-#define MQTT_HEATER_STATUS_TOPIC "heater/living/status"
-
-#define MQTT_MOTION_STATUS_TOPIC "motion/living/status"
-#define MQTT_DHT_STATUS_TOPIC "dht/living/status"
-
 #define MQTT_QOS 1
 #define MQTT_RETAIN true
+
+// Web server
+#define WWW_PORT 80
 
 // Pin mapping
 #define DHT_PIN D1
 #define PIR_PIN D2
 #define IR_LED_PIN D6
+#define IR_EMITTER_PIN D6 // alias
+
+// DHT
+#define DHT_PUBLISH_PERIOD 300000 // [ms] = 5 minutes
+#define DHT_READ_PERIOD 10000 // [ms] = 10 seconds
+
+// Global variables
+WiFiClient wifi_client;
+PubSubClient MQTT_client(wifi_client);
+ESP8266WebServer web_server(WWW_PORT);
 
 // AC variables
-char* AC_status;
-char* heater_status;
-
-// IR LED parameters
-byte IR_signal[] = {1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,1,1,1,1,0,0,1,1,0,0,0,1,0,0,1,0,0,1,1,0,1,1,0,1,1,0,1,1,0,0,1,0,0,0,0,0,1,1,0,1,1,1,0,0,1,1,0,1,1,0,1,1,0,0,1,0,0,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,0,0,0,0,0,1,1,0,1,1,1,1,0,0,0,1,0,1,1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1};
-
-// IR signal bit mapping
-#define TEMPERATURE_BITS_INDEX 106
-#define MODE_BITS_INDEX 200
-#define POWER_BIT_INDEX 220
-#define FAN_BITS_INDEX 204
-#define SPECIAL_BITS_INDEX 88
-
-#define TEMPERATURE_BIT_COUNT 5
-#define MODE_BIT_COUNT 3
-#define FAN_BIT_COUNT 3
-#define SPECIAL_BIT_COUNT 8
-#define POWER_BIT_COUNT 1
-
-#define POWER_ON 1
-#define POWER_OFF 0
-
-#define MODE_COOLING 3
-#define MODE_HEATING 6
-
-#define TEMPERATURE_HEATING 23
-#define TEMPERATURE_COOLING 27
-
-#define FAN_SILENT 1
-#define FAN_LOW 2
-#define FAN_MID 3
-#define FAN_HIGH 4
-#define FAN_AUTO 5
-
-// IR signal timing
-#define START_PULSE 3424
-#define START_PAUSE 1663
-#define PULSE_LEN 485
-#define PAUSE_HIGH 1175
-#define PAUSE_LOW 346
-
-// PIR variables
-int last_PIR_reading;
+const char* AC_state = "unknown";
 
 // DHT variables
 DHT dht(DHT_PIN, DHT22);
-#define DHT_PUBLISH_PERIOD 300000 // [ms] = 5 minutes
-#define DHT_READ_PERIOD 10000 // [ms] = 10 seconds
-long last_DHT_publish_time, last_DHT_read_time;
-
-float DHT_temperature = 0;
-float DHT_humidity = 0;
 
 void setup() {
 
@@ -124,12 +70,15 @@ void setup() {
   wifi_setup();
   MQTT_setup();
   OTA_setup();
-
-  wifi_connect();
+  web_server_setup();
 }
 
 void loop() {
   ArduinoOTA.handle();
+  MQTT_client.loop();
+  web_server.handleClient();
   read_PIR();
   read_DHT();
+  wifi_connection_manager();
+  MQTT_connection_manager();
 }

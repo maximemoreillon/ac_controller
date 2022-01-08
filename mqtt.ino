@@ -1,168 +1,96 @@
 void MQTT_setup(){
-
-  // Callbacks
-  MQTT_client.onConnect(MQTT_connect_callback);
-  MQTT_client.onDisconnect(MQTT_disconnect_callback);
-  MQTT_client.onSubscribe(MQTT_subscribe_callback);
-  MQTT_client.onUnsubscribe(MQTT_unsubscribe_callback);
-  MQTT_client.onMessage(MQTT_message_callback);
-  MQTT_client.onPublish(MQTT_publish_callback);
-
-  // Settings
+  Serial.println(F("[MQTT] MQTT setup"));
   MQTT_client.setServer(MQTT_BROKER_ADDRESS, MQTT_PORT);
-  MQTT_client.setCredentials(MQTT_USERNAME, MQTT_PASSWORD);
+  MQTT_client.setCallback(MQTT_message_callback);
 }
 
-void MQTT_connect() {
-  Serial.println("MQTT connecting...");
+void MQTT_connection_manager(){
 
-  MQTT_reconnect_timer.detach();
-  MQTT_client.connect();
-}
-
-void MQTT_connect_callback(bool sessionPresent) {
-  Serial.println("MQTT connected");
-
-  // Subscribing to command topics
-  MQTT_client.subscribe(MQTT_AC_COMMAND_TOPIC, MQTT_QOS);
-  MQTT_client.subscribe(MQTT_HEATER_COMMAND_TOPIC, MQTT_QOS);
-
-  // Update AC status
-  MQTT_client.publish(MQTT_AC_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, AC_status);
-  MQTT_client.publish(MQTT_HEATER_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, heater_status);
-}
-
-void MQTT_disconnect_callback(AsyncMqttClientDisconnectReason reason) {
-  Serial.println("MQTT disconnected");
-
-  if (WiFi.isConnected()) {
-    MQTT_reconnect_timer.attach(2, MQTT_connect);
-  }
-}
-
-void MQTT_subscribe_callback(uint16_t packetId, uint8_t qos) {
-  Serial.println("MQTT subscribed");
-}
-
-void MQTT_unsubscribe_callback(uint16_t packetId) {
-  Serial.println("MQTT unsubscribed");
-}
-
-void MQTT_message_callback(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
-
-  Serial.print("MQTTT message received: ");
-  Serial.print("  topic: ");
-  Serial.print(topic);
-  Serial.print("  payload: ");
-  Serial.print(payload);
-  Serial.print("  qos: ");
-  Serial.print(properties.qos);
-  Serial.print("  dup: ");
-  Serial.print(properties.dup);
-  Serial.print("  retain: ");
-  Serial.print(properties.retain);
-  Serial.print("  len: ");
-  Serial.print(len);
-  Serial.print("  index: ");
-  Serial.print(index);
-  Serial.print("  total: ");
-  Serial.print(total);
-  Serial.println("");
-
-  IR_set_bits(FAN_BITS_INDEX, FAN_BIT_COUNT, FAN_MID);
+  static int MQTT_connected = -1; // 1: connected, 0: disconnected, -1: unknown
+  static long last_MQTT_connection_attempt;
   
-  if(strncmp(payload, "OFF", len)==0) {
-    Serial.println("Turning AC and HEATING OFF");
-    heater_status = "OFF";
-    AC_status = "OFF";
-    IR_set_bits(POWER_BIT_INDEX, POWER_BIT_COUNT, POWER_OFF);
-  }
-  else if(strncmp(payload, "ON", len)==0) {
-
-    IR_set_bits(POWER_BIT_INDEX, POWER_BIT_COUNT, POWER_ON);
-
-    if(strcmp(topic, MQTT_HEATER_COMMAND_TOPIC)==0){
-      Serial.println("Turning HEATER ON and AC OFF");
-      AC_status = "OFF";
-      heater_status = "ON";
-
-      IR_set_bits(MODE_BITS_INDEX, MODE_BIT_COUNT, MODE_HEATING);
-      IR_set_bits(TEMPERATURE_BITS_INDEX, TEMPERATURE_BIT_COUNT, TEMPERATURE_HEATING);
+  if(!MQTT_client.connected()) {
+    if(MQTT_connected != 0){
+      // MQTT connection status changed to "disconnected"
+      MQTT_connected = 0;
+      Serial.print(F("[MQTT] Disconnected: "));
+      Serial.println(MQTT_client.state());
     }
-    else if(strcmp(topic, MQTT_AC_COMMAND_TOPIC)==0){
-      Serial.println("Turning AC ON and HEATER OFF");
-      AC_status = "ON";
-      heater_status = "OFF";
-
-      IR_set_bits(MODE_BITS_INDEX, MODE_BIT_COUNT, MODE_COOLING);
-      IR_set_bits(TEMPERATURE_BITS_INDEX, TEMPERATURE_BIT_COUNT, TEMPERATURE_COOLING);
-    }
-  }
-  else if(strncmp(payload, "TOGGLE", len)==0) {
-
-    if(strcmp(topic, MQTT_HEATER_COMMAND_TOPIC)==0){
-
-      AC_status = "OFF";
-      
-      if(strcmp(heater_status,"OFF") == 0) {
-        // Toggling HEATER to ON
-        Serial.println("Toggling HEATER ON and turning AC OFF");
-        heater_status = "ON";
         
-        IR_set_bits(POWER_BIT_INDEX, POWER_BIT_COUNT, POWER_ON);
-        IR_set_bits(MODE_BITS_INDEX, MODE_BIT_COUNT, MODE_HEATING);
-        IR_set_bits(TEMPERATURE_BITS_INDEX, TEMPERATURE_BIT_COUNT, TEMPERATURE_HEATING);
-      }
-      else {
-        // Toggling HEATER to OFF
-        Serial.println("Toggling HEATER OFF and turning AC OFF");
-        heater_status = "OFF";
+    if(millis() - last_MQTT_connection_attempt > 1000){
+      last_MQTT_connection_attempt = millis();
 
-        IR_set_bits(POWER_BIT_INDEX, POWER_BIT_COUNT, POWER_OFF);
-      }
-    }
-    else if(strcmp(topic, MQTT_AC_COMMAND_TOPIC)==0){
-
-      heater_status = "OFF";
+      // Prepare a last will
+      StaticJsonDocument<200> outbound_JSON_message;
+      outbound_JSON_message["state"] = "disconnected";
+      char last_will[100];
+      serializeJson(outbound_JSON_message, last_will, sizeof(last_will));
       
-      if(strcmp(AC_status,"OFF") == 0) {
-        Serial.println("Toggling AC ON and turning HEATER OFF");
-        AC_status = "ON";
+      MQTT_client.connect(
+        HOSTNAME, 
+        MQTT_USERNAME, 
+        MQTT_PASSWORD, 
+        MQTT_AC_STATUS_TOPIC, 
+        MQTT_QOS, 
+        MQTT_RETAIN, 
+        last_will);
+    }
         
-        IR_set_bits(POWER_BIT_INDEX, POWER_BIT_COUNT, POWER_ON);
-        IR_set_bits(MODE_BITS_INDEX, MODE_BIT_COUNT, MODE_COOLING);
-        IR_set_bits(TEMPERATURE_BITS_INDEX, TEMPERATURE_BIT_COUNT, TEMPERATURE_COOLING);
-      }
-      else {
-        Serial.println("Toggling AC OFF and turning HEATER OFF");
-        AC_status = "OFF";
+  } else {
+    if(MQTT_connected != 1){
+      // MQTT connection status changed to "connected"
+      MQTT_connected = 1;
 
-        IR_set_bits(POWER_BIT_INDEX, POWER_BIT_COUNT, POWER_OFF);
-      }
+      Serial.println(F("[MQTT] Connected"));
+      Serial.println(F("[MQTT] Subscribing to topics"));
+      MQTT_client.subscribe(MQTT_AC_COMMAND_TOPIC);
+
+      Serial.println(F("[MQTT] sending AC state update"));
+      MQTT_publish_AC_state();
     }
   }
+}
 
-  // Send IR signal to AC
-  IR_send_signal();
+void MQTT_message_callback(char* topic, byte* payload, unsigned int length) {
 
-  // Sent acknowledgment to MQTT
-  Serial.println("MQTT publish of air conditioner status");
-  MQTT_client.publish(MQTT_AC_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, AC_status);
-  MQTT_client.publish(MQTT_HEATER_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, heater_status);
+  Serial.print(F("[MQTTT] message received on "));
+  Serial.print(topic);
+  Serial.println(", payload: ");
+
+  // Parsing payload as JSON
+  StaticJsonDocument<200> inbound_JSON_message;
+  deserializeJson(inbound_JSON_message, payload);
+
+  const char* command_state = inbound_JSON_message["state"];
+
+  if( strcmp(command_state, "OFF")==0 || strcmp(command_state, "off")==0 ) {
+    Serial.println(F("[IR] Turning AC and HEATING OFF"));
+    IR_send_signal(IR_signal_off);
+    AC_state = command_state;
+    MQTT_publish_AC_state();
+  }
+  else if(strcmp(command_state, "ac_on")==0) {
+    Serial.println(F("[IR] Turning HEATER ON and AC OFF"));
+    IR_send_signal(IR_signal_heater_on);
+    AC_state = command_state;
+    MQTT_publish_AC_state();
+  }
+  else if(strcmp(command_state, "heater_on")==0) {
+    Serial.println(F("[IR] Turning AC ON and HEATER OFF"));
+    IR_send_signal(IR_signal_cooler_on);
+    AC_state = command_state;
+    MQTT_publish_AC_state();
+  }
+
+  
 
 }
 
-void MQTT_publish_callback(uint16_t packetId) {
-  Serial.println("MQTT published");
-}
-
-void MQTT_publish_DHT(float p_temperature, float p_humidity)
-{
-  StaticJsonBuffer<200> jsonBuffer;
-  JsonObject& root = jsonBuffer.createObject();
-  root["temperature"] = (String)p_temperature;
-  root["humidity"] = (String)p_humidity;
-  char data[200];
-  root.printTo(data, root.measureLength() + 1);
-  MQTT_client.publish(MQTT_DHT_STATUS_TOPIC, MQTT_QOS, MQTT_RETAIN, data);
+void MQTT_publish_AC_state(){
+  StaticJsonDocument<200> outbound_JSON_message;
+  outbound_JSON_message["state"] = AC_state;
+  char JSONmessageBuffer[100];
+  serializeJson(outbound_JSON_message, JSONmessageBuffer, sizeof(JSONmessageBuffer));
+  Serial.println(F("[MQTT] publish AC state"));
+  MQTT_client.publish(MQTT_AC_STATUS_TOPIC, JSONmessageBuffer, MQTT_RETAIN);
 }
