@@ -6,7 +6,7 @@
  * 
  */
 
-#include "iotKernel.h"
+#include "IotKernel.h"
 
 // Libraries
 #include <DHT.h> // Temperature and humidity sensor

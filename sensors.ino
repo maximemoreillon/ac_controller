@@ -41,8 +41,8 @@ void read_DHT(){
       StaticJsonDocument<200> outbound_JSON_message;
   
       // Add the DHT reading to the JSON message
-      outbound_JSON_message["temperature"] = (String)DHT_temperature;
-      outbound_JSON_message["humidity"] = (String)DHT_humidity;
+      outbound_JSON_message["temperature"] = DHT_temperature;
+      outbound_JSON_message["humidity"] = DHT_humidity;
       
       // Serialize JSON into a char array
       char JSONmessageBuffer[100];
