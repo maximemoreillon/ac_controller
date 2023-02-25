@@ -19,8 +19,7 @@ More information on the project page [here](https://articles.maximemoreillon.com
 ## Requirements
 
 - Arduino IDE with [support for ESP8266](https://github.com/esp8266/Arduino)
-- [Async MQTT client](https://github.com/marvinroger/async-mqtt-client)
-- [ESPAsyncTCP](https://github.com/me-no-dev/ESPAsyncTCP)
+- [IoT Kernel](https://github.com/maximemoreillon/iot-kernel)
 
 ## References
 
