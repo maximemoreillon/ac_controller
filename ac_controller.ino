@@ -11,23 +11,22 @@
 // Libraries
 #include <DHT.h> // Temperature and humidity sensor
 
-//#include "aircon_kitchen_nagoya.h";
-#include "aircon_bedroom_nagoya.h";
+//#include "aircon_kitchen_nagoya.h"
+#include "aircon_bedroom_nagoya.h"
 
 // Pin mapping
 #define DHT_PIN D1
 #define PIR_PIN D2
-#define IR_LED_PIN D6
-#define IR_EMITTER_PIN D6 // alias
+#define IR_EMITTER_PIN D6
 
 // DHT
 #define DHT_PUBLISH_PERIOD 60000 // [ms] = 1 minute
 #define DHT_READ_PERIOD 10000 // [ms] = 10 seconds
 
-IotKernel iot_kernel("aircon","0.0.1"); 
+IotKernel iot_kernel("aircon","0.1.0"); 
 
 // AC variables
-const char* AC_state = "unknown";
+String AC_state = "unknown";
 
 // DHT variables
 DHT dht(DHT_PIN, DHT22);
@@ -38,7 +37,7 @@ void setup() {
   delay(10);
 
   // IO init
-  pinMode(IR_LED_PIN, OUTPUT);
+  pinMode(IR_EMITTER_PIN, OUTPUT);
   pinMode(PIR_PIN, INPUT);
 
   dht.begin();

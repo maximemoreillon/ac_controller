@@ -1,87 +1,45 @@
-void IR_send_signal(unsigned int IR_signal[]) {
-  
-  for(int i = 0; i < IR_SIGNAL_LENGTH; i++){
-    unsigned IR_signal_bit = IR_signal[i];
-    if(i % 2 == 0) IR_send_pulse(IR_signal_bit);
-    else IR_send_pause(IR_signal_bit);
+// Protocol of the AC remote, as recorded (see the README for the reference):
+// header, then each byte LSB first, a bit being a mark followed by a short (0) or long (1) space.
+// Each signal is sent twice.
+#define IR_HEADER_MARK 3000 // [us]
+#define IR_HEADER_SPACE_1 3000 // [us]
+#define IR_HEADER_SPACE_2 4400 // [us]
+#define IR_BIT_MARK 530 // [us]
+#define IR_ZERO_SPACE 550 // [us]
+#define IR_ONE_SPACE 1650 // [us]
+#define IR_REPEAT_SPACE 39500 // [us]
+
+void IR_send_signal(const uint8_t* bytes, size_t length) {
+  for(int repeat = 0; repeat < 2; repeat++) {
+    if(repeat) IR_send_pause(IR_REPEAT_SPACE);
+
+    IR_send_pulse(IR_HEADER_MARK);
+    IR_send_pause(IR_HEADER_SPACE_1);
+    IR_send_pulse(IR_HEADER_MARK);
+    IR_send_pause(IR_HEADER_SPACE_2);
+
+    for(size_t i = 0; i < length; i++) {
+      for(int bit = 0; bit < 8; bit++) {
+        IR_send_pulse(IR_BIT_MARK);
+        IR_send_pause((bytes[i] >> bit) & 1 ? IR_ONE_SPACE : IR_ZERO_SPACE);
+      }
+    }
+    IR_send_pulse(IR_BIT_MARK);
   }
-  
 }
 
 void IR_send_pulse(unsigned int pulse_length) {
-  // Send one pulse of a given length
-
-  // Pin must be toggling between ON and OFF at 37-38kHz
-  // This variable keeps track of wether the pin is ON or OFF
+  // Toggles the LED at ~38kHz (26us period => 13us between toggles) for the duration of the pulse
   int IR_on = 0;
-
-  
-  long startMicros = micros();
-  while (micros() < (startMicros + pulse_length)){
-    
-    // toggle pin and wait 26 us to make it a pulse
+  unsigned long startMicros = micros();
+  while (micros() - startMicros < pulse_length){
     IR_on = 1 - IR_on;
-    
     digitalWrite(IR_EMITTER_PIN, IR_on);
-
-    // IR LED frequency must be around 37-38kHz
-    // Approx pulse period = 26us
-    // A period consists of the LED being toggled twice => 13us between toggles
     delayMicroseconds(13);
   }
-  
-  // turn off IR after pulse is complete
   digitalWrite(IR_EMITTER_PIN, LOW);
 }
 
 void IR_send_pause(unsigned int pause_length) {
-  // A pause is just not doing anything for a given amount of time
   delayMicroseconds(pause_length);
 }
-
-// LEGACY CODE FROM HERE
-//void IR_send_signal(int IR_signal[]) {
-//  
-//  for (int i=0; i < IR_SIGNAL_LENGTH; i++){
-//    
-//    int IR_signal_bit = IR_signal[i];
-//
-//    if (IR_signal_bit > 0) {
-//      IR_send_pulse(IR_signal_bit);
-//    }
-//    else {
-//      IR_send_pause(-IR_signal_bit);
-//    }
-//  }
-//}
-
-
-//void IR_send_pulse(int pulse_length) {
-//  // Send one pulse of a given length
-//  
-//  int IR_on = 0;
-//  long startMicros = micros();
-//  while (micros() < (startMicros + pulse_length)){
-//    // toggle pin and wait 26 us to make it a pulse
-//    if (IR_on == 0) {
-//      IR_on = 1;
-//    }
-//    else {
-//      IR_on = 0;
-//    }
-//    digitalWrite(IR_LED_PIN, IR_on);
-//
-//    // IR LED frequency must be around 37-38kHz
-//    // Approx pulse period = 26us
-//    // A period consists of the LED being toggled twice => 13us between toggles
-//    delayMicroseconds(13);
-//  }
-//  
-//  // turn off IR after pulse is complete
-//  digitalWrite(IR_LED_PIN, LOW);
-//}
-//
-//void IR_send_pause(int pause_length) {
-//  // A pause is just not doing anything for a given amount of time
-//  delayMicroseconds(pause_length);
-//}
