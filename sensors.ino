@@ -36,7 +36,7 @@ void read_DHT(){
 
     char JSONmessageBuffer[100];
     serializeJson(outbound_JSON_message, JSONmessageBuffer, sizeof(JSONmessageBuffer));
-    iot_kernel.mqtt.publish(MQTT_DHT_STATUS_TOPIC, JSONmessageBuffer, MQTT_RETAIN);
+    iot_kernel.mqtt.publish((iot_kernel.mqttBaseTopic + "/temperature").c_str(), JSONmessageBuffer, MQTT_RETAIN);
   }
 }
 
@@ -55,5 +55,5 @@ void publish_PIR_state(){
 
   char JSONmessageBuffer[100];
   serializeJson(outbound_JSON_message, JSONmessageBuffer, sizeof(JSONmessageBuffer));
-  iot_kernel.mqtt.publish(MQTT_MOTION_STATUS_TOPIC, JSONmessageBuffer, MQTT_RETAIN);
+  iot_kernel.mqtt.publish((iot_kernel.mqttBaseTopic + "/motion").c_str(), JSONmessageBuffer, MQTT_RETAIN);
 }

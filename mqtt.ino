@@ -3,7 +3,7 @@ void mqtt_config(){
 
   // NOTE: subscriptions are lost on disconnect, hence subscribing on every connection
   iot_kernel.onMqttConnect([]() {
-    iot_kernel.mqtt.subscribe(MQTT_AC_COMMAND_TOPIC);
+    iot_kernel.mqtt.subscribe(iot_kernel.mqttCommandTopic.c_str());
     publish_PIR_state();
   });
 }
@@ -41,5 +41,5 @@ void MQTT_publish_AC_state(){
   outbound_JSON_message["state"] = AC_state;
   char JSONmessageBuffer[100];
   serializeJson(outbound_JSON_message, JSONmessageBuffer, sizeof(JSONmessageBuffer));
-  iot_kernel.mqtt.publish(MQTT_AC_STATUS_TOPIC, JSONmessageBuffer, MQTT_RETAIN);
+  iot_kernel.mqtt.publish(iot_kernel.mqttStateTopic.c_str(), JSONmessageBuffer, MQTT_RETAIN);
 }
